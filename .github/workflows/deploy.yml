@@ -55,6 +55,10 @@ jobs:
 
       # ساخت android project
       - run: npx cap add android
+      - name: Fix Kotlin version
+        run: |
+          echo "ext.kotlin_version = '1.8.22'" >> android/build.gradle
+
 
       # sync فایل‌ها
       - run: npx cap sync android
