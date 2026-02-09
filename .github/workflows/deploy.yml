@@ -48,7 +48,7 @@ jobs:
       - run: npm run build
 
       # نصب Capacitor داخل CI
-      - run: npm install @capacitor/core @capacitor/cli
+      - run: npm install @capacitor/core @capacitor/cli @capacitor/android
 
       # init پروژه capacitor
       - run: npx cap init finance com.finance --web-dir=dist
