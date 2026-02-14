@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Member, Income } from '../types';
-import { formatCurrency } from '../utils';
+import { formatCurrency, addCommas, removeCommas } from '../utils';
 
 interface Props {
   members: Member[];
@@ -30,7 +30,7 @@ const IncomeManager: React.FC<Props> = ({ members, incomes, onAdd, onDelete }) =
     <div className="space-y-8">
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow-sm grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end border border-gray-100">
         <div>
-          <label className="block text-sm text-gray-600 mb-1">صاحب درآمد</label>
+          <label className="block text-sm text-gray-600 mb-1 font-bold">صاحب درآمد</label>
           <select 
             className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.memberId}
@@ -40,7 +40,7 @@ const IncomeManager: React.FC<Props> = ({ members, incomes, onAdd, onDelete }) =
           </select>
         </div>
         <div>
-          <label className="block text-sm text-gray-600 mb-1">منبع درآمد</label>
+          <label className="block text-sm text-gray-600 mb-1 font-bold">منبع درآمد</label>
           <input 
             type="text" 
             placeholder="مثلا: حقوق ماهیانه"
@@ -50,12 +50,13 @@ const IncomeManager: React.FC<Props> = ({ members, incomes, onAdd, onDelete }) =
           />
         </div>
         <div>
-          <label className="block text-sm text-gray-600 mb-1">مبلغ ماهانه (تومان)</label>
+          <label className="block text-sm text-gray-600 mb-1 font-bold">مبلغ ماهانه (تومان)</label>
           <input 
-            type="number" 
-            className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-            value={formData.amount}
-            onChange={e => setFormData({ ...formData, amount: Number(e.target.value) })}
+            type="text" 
+            inputMode="numeric"
+            className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 font-bold"
+            value={addCommas(formData.amount)}
+            onChange={e => setFormData({ ...formData, amount: removeCommas(e.target.value) })}
           />
         </div>
         <div className="flex items-center h-[42px]">
@@ -66,7 +67,7 @@ const IncomeManager: React.FC<Props> = ({ members, incomes, onAdd, onDelete }) =
               onChange={e => setFormData({ ...formData, isRecurring: e.target.checked })}
               className="w-4 h-4 text-blue-600 rounded"
             />
-            <span className="text-sm text-gray-600">درآمد مستمر ماهانه</span>
+            <span className="text-sm text-gray-600 font-bold">درآمد مستمر ماهانه</span>
           </label>
         </div>
         <button type="submit" className="bg-blue-600 text-white p-2 rounded-lg font-bold hover:bg-blue-700 h-[42px]">ثبت درآمد</button>
@@ -76,11 +77,11 @@ const IncomeManager: React.FC<Props> = ({ members, incomes, onAdd, onDelete }) =
         <table className="w-full text-right border-collapse">
           <thead>
             <tr className="bg-gray-50 text-gray-600 border-b border-gray-100">
-              <th className="p-4">منبع</th>
-              <th className="p-4">صاحب</th>
-              <th className="p-4 text-center">نوع</th>
-              <th className="p-4">مبلغ</th>
-              <th className="p-4">عملیات</th>
+              <th className="p-4 font-bold">منبع</th>
+              <th className="p-4 font-bold">صاحب</th>
+              <th className="p-4 font-bold text-center">نوع</th>
+              <th className="p-4 font-bold">مبلغ</th>
+              <th className="p-4 font-bold">عملیات</th>
             </tr>
           </thead>
           <tbody>

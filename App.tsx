@@ -56,6 +56,17 @@ const App: React.FC = () => {
     setData(prev => ({ ...prev, assets: [...prev.assets, { ...asset, id: generateId() }] }));
   };
 
+  const updateAssetAmount = (assetId: string, newAmount: number) => {
+    setData(prev => ({
+      ...prev,
+      assets: prev.assets.map(a => a.id === assetId ? { ...a, amount: newAmount } : a)
+    }));
+  };
+
+  const deleteAsset = (id: string) => {
+    setData(prev => ({ ...prev, assets: prev.assets.filter(a => a.id !== id) }));
+  };
+
   const addLiability = (liability: Omit<Liability, 'id'>) => {
     setData(prev => ({ ...prev, liabilities: [...prev.liabilities, { ...liability, id: generateId() }] }));
   };
@@ -95,7 +106,6 @@ const App: React.FC = () => {
           const updatedInstallments = l.installments.map(ins => 
             ins.id === installmentId ? { ...ins, amount: newAmount } : ins
           );
-          // Optional: Update total amount based on sum of installments or keep it as metadata
           const newTotal = updatedInstallments.reduce((sum, ins) => sum + ins.amount, 0);
           return {
             ...l,
@@ -147,7 +157,15 @@ const App: React.FC = () => {
         <div className="max-w-6xl mx-auto pb-12">
           {activeTab === 'dashboard' && <Dashboard data={data} />}
           {activeTab === 'members' && <MembersManager members={data.members} onAdd={addMember} onDelete={deleteMember} />}
-          {activeTab === 'assets' && <AssetsManager members={data.members} assets={data.assets} onAdd={addAsset} />}
+          {activeTab === 'assets' && (
+            <AssetsManager 
+              members={data.members} 
+              assets={data.assets} 
+              onAdd={addAsset} 
+              onUpdateAmount={updateAssetAmount}
+              onDelete={deleteAsset}
+            />
+          )}
           {activeTab === 'liabilities' && (
             <LiabilitiesManager 
               members={data.members} 

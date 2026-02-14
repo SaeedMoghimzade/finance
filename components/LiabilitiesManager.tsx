@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Member, Liability, RepaymentType, Installment } from '../types';
-import { formatCurrency, generateId } from '../utils';
+import { formatCurrency, generateId, addCommas, removeCommas } from '../utils';
 
 interface Props {
   members: Member[];
@@ -104,10 +104,11 @@ const LiabilitiesManager: React.FC<Props> = ({ members, liabilities, onAdd, onTo
           <div>
             <label className="block text-sm text-gray-600 mb-1">مبلغ کل (تومان)</label>
             <input 
-              type="number" 
-              className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.totalAmount}
-              onChange={e => setFormData({ ...formData, totalAmount: Number(e.target.value) })}
+              type="text" 
+              inputMode="numeric"
+              className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 font-bold"
+              value={addCommas(formData.totalAmount)}
+              onChange={e => setFormData({ ...formData, totalAmount: removeCommas(e.target.value) })}
             />
           </div>
           <div>
@@ -216,10 +217,11 @@ const LiabilitiesManager: React.FC<Props> = ({ members, liabilities, onAdd, onTo
                               <div className="flex items-center gap-1">
                                 <input 
                                   autoFocus
-                                  type="number"
-                                  className="w-24 p-1 text-xs border rounded outline-none focus:ring-1 focus:ring-blue-400"
-                                  value={tempAmount}
-                                  onChange={e => setTempAmount(Number(e.target.value))}
+                                  type="text"
+                                  inputMode="numeric"
+                                  className="w-24 p-1 text-xs border rounded outline-none focus:ring-1 focus:ring-blue-400 font-bold"
+                                  value={addCommas(tempAmount)}
+                                  onChange={e => setTempAmount(removeCommas(e.target.value))}
                                 />
                                 <button 
                                   onClick={() => handleSaveEdit(l.id, ins.id)}
