@@ -12,11 +12,15 @@ interface Props {
   onDelete: (id: string) => void;
 }
 
+type InputMethod = 'total' | 'per_installment';
+
 const LiabilitiesManager: React.FC<Props> = ({ members, liabilities, onAdd, onToggleInstallment, onUpdateInstallmentAmount, onDelete }) => {
+  const [inputMethod, setInputMethod] = useState<InputMethod>('total');
   const [formData, setFormData] = useState({
     memberId: members[0]?.id || '',
     title: '',
     totalAmount: 0,
+    perInstallmentAmount: 0,
     repaymentType: RepaymentType.INSTALLMENT,
     installmentsCount: 12,
     startDate: new Date().toISOString().split('T')[0],
@@ -29,18 +33,39 @@ const LiabilitiesManager: React.FC<Props> = ({ members, liabilities, onAdd, onTo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.totalAmount > 0 && formData.title) {
+    
+    let finalTotalAmount = formData.totalAmount;
+    let finalPerInstallmentAmount = 0;
+
+    if (formData.repaymentType === RepaymentType.INSTALLMENT) {
+      if (inputMethod === 'per_installment') {
+        finalPerInstallmentAmount = formData.perInstallmentAmount;
+        finalTotalAmount = finalPerInstallmentAmount * formData.installmentsCount;
+      } else {
+        finalPerInstallmentAmount = Math.floor(formData.totalAmount / formData.installmentsCount);
+      }
+    } else {
+      finalTotalAmount = formData.totalAmount;
+    }
+
+    if (finalTotalAmount > 0 && formData.title) {
       const installments: Installment[] = [];
-      const installmentAmount = Math.floor(formData.totalAmount / formData.installmentsCount);
       
       if (formData.repaymentType === RepaymentType.INSTALLMENT) {
         for (let i = 0; i < formData.installmentsCount; i++) {
           const date = new Date(formData.startDate);
           date.setMonth(date.getMonth() + i);
+          
+          let currentAmount = finalPerInstallmentAmount;
+          // اگر بر اساس مبلغ کل بود، قسط آخر را برای رند شدن تنظیم می‌کنیم
+          if (inputMethod === 'total' && i === formData.installmentsCount - 1) {
+            currentAmount = finalTotalAmount - (finalPerInstallmentAmount * (formData.installmentsCount - 1));
+          }
+
           installments.push({
             id: generateId(),
             dueDate: date.toISOString().split('T')[0],
-            amount: i === formData.installmentsCount - 1 ? formData.totalAmount - (installmentAmount * (formData.installmentsCount - 1)) : installmentAmount,
+            amount: currentAmount,
             isPaid: false
           });
         }
@@ -48,7 +73,7 @@ const LiabilitiesManager: React.FC<Props> = ({ members, liabilities, onAdd, onTo
         installments.push({
           id: generateId(),
           dueDate: formData.startDate,
-          amount: formData.totalAmount,
+          amount: finalTotalAmount,
           isPaid: false
         });
       }
@@ -56,14 +81,14 @@ const LiabilitiesManager: React.FC<Props> = ({ members, liabilities, onAdd, onTo
       onAdd({
         memberId: formData.memberId,
         title: formData.title,
-        totalAmount: formData.totalAmount,
+        totalAmount: finalTotalAmount,
         repaymentType: formData.repaymentType,
         installments,
         startDate: formData.startDate,
         description: formData.description
       });
 
-      setFormData(prev => ({ ...prev, title: '', totalAmount: 0, description: '' }));
+      setFormData(prev => ({ ...prev, title: '', totalAmount: 0, perInstallmentAmount: 0, description: '' }));
     }
   };
 
@@ -79,10 +104,10 @@ const LiabilitiesManager: React.FC<Props> = ({ members, liabilities, onAdd, onTo
 
   return (
     <div className="space-y-8">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <label className="block text-sm text-gray-600 mb-1">شخص مدیون</label>
+            <label className="block text-sm text-gray-600 mb-1 font-bold">شخص مدیون</label>
             <select 
               className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
               value={formData.memberId}
@@ -92,7 +117,7 @@ const LiabilitiesManager: React.FC<Props> = ({ members, liabilities, onAdd, onTo
             </select>
           </div>
           <div>
-            <label className="block text-sm text-gray-600 mb-1">عنوان بدهی / وام</label>
+            <label className="block text-sm text-gray-600 mb-1 font-bold">عنوان بدهی / وام</label>
             <input 
               type="text" 
               placeholder="مثلا: وام مسکن"
@@ -102,29 +127,7 @@ const LiabilitiesManager: React.FC<Props> = ({ members, liabilities, onAdd, onTo
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-600 mb-1">مبلغ کل (تومان)</label>
-            <input 
-              type="text" 
-              inputMode="numeric"
-              className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 font-bold"
-              value={addCommas(formData.totalAmount)}
-              onChange={e => setFormData({ ...formData, totalAmount: removeCommas(e.target.value) })}
-            />
-          </div>
-          <div>
-            <label className="block text-sm text-gray-600 mb-1">تاریخ شروع / سررسید</label>
-            <input 
-              type="date" 
-              className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
-              value={formData.startDate}
-              onChange={e => setFormData({ ...formData, startDate: e.target.value })}
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
-          <div>
-            <label className="block text-sm text-gray-600 mb-1">نوع بازپرداخت</label>
+            <label className="block text-sm text-gray-600 mb-1 font-bold">نوع بازپرداخت</label>
             <select 
               className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
               value={formData.repaymentType}
@@ -134,18 +137,89 @@ const LiabilitiesManager: React.FC<Props> = ({ members, liabilities, onAdd, onTo
               <option value={RepaymentType.LUMP_SUM}>یکجا</option>
             </select>
           </div>
-          {formData.repaymentType === RepaymentType.INSTALLMENT && (
+          <div>
+            <label className="block text-sm text-gray-600 mb-1 font-bold">تاریخ شروع / سررسید</label>
+            <input 
+              type="date" 
+              className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 font-sans"
+              value={formData.startDate}
+              onChange={e => setFormData({ ...formData, startDate: e.target.value })}
+            />
+          </div>
+        </div>
+
+        {formData.repaymentType === RepaymentType.INSTALLMENT && (
+          <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">تعداد اقساط</label>
+              <label className="block text-sm text-gray-600 mb-1 font-bold">روش ثبت مبلغ</label>
+              <div className="flex bg-white rounded-lg p-1 border border-gray-200">
+                <button 
+                  type="button"
+                  onClick={() => setInputMethod('total')}
+                  className={`flex-1 py-1 text-xs rounded-md transition-all ${inputMethod === 'total' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
+                >مبلغ کل</button>
+                <button 
+                  type="button"
+                  onClick={() => setInputMethod('per_installment')}
+                  className={`flex-1 py-1 text-xs rounded-md transition-all ${inputMethod === 'per_installment' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
+                >مبلغ هر قسط</button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-600 mb-1 font-bold">تعداد اقساط</label>
               <input 
                 type="number" 
+                min="1"
                 className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                 value={formData.installmentsCount}
                 onChange={e => setFormData({ ...formData, installmentsCount: Number(e.target.value) })}
               />
             </div>
-          )}
-          <button type="submit" className="bg-red-600 text-white p-2 rounded-lg font-bold hover:bg-red-700 h-[42px]">ثبت بدهی جدید</button>
+
+            <div>
+              <label className="block text-sm text-gray-600 mb-1 font-bold">
+                {inputMethod === 'total' ? 'مبلغ کل بدهی (تومان)' : 'مبلغ هر قسط (تومان)'}
+              </label>
+              <input 
+                type="text" 
+                inputMode="numeric"
+                placeholder="۰"
+                className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 font-bold"
+                value={inputMethod === 'total' ? addCommas(formData.totalAmount) : addCommas(formData.perInstallmentAmount)}
+                onChange={e => {
+                  const val = removeCommas(e.target.value);
+                  if (inputMethod === 'total') {
+                    setFormData({ ...formData, totalAmount: val });
+                  } else {
+                    setFormData({ ...formData, perInstallmentAmount: val });
+                  }
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {formData.repaymentType === RepaymentType.LUMP_SUM && (
+          <div className="bg-red-50/50 p-4 rounded-xl border border-red-100">
+            <div className="max-w-xs">
+              <label className="block text-sm text-gray-600 mb-1 font-bold">مبلغ بدهی (تومان)</label>
+              <input 
+                type="text" 
+                inputMode="numeric"
+                className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-red-500 font-bold"
+                value={addCommas(formData.totalAmount)}
+                onChange={e => setFormData({ ...formData, totalAmount: removeCommas(e.target.value) })}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end pt-2">
+          <button type="submit" className="bg-slate-800 text-white px-8 py-3 rounded-xl font-bold hover:bg-slate-900 shadow-md transition-all flex items-center gap-2">
+            <span>💾</span>
+            ثبت بدهی جدید
+          </button>
         </div>
       </form>
 
@@ -179,7 +253,7 @@ const LiabilitiesManager: React.FC<Props> = ({ members, liabilities, onAdd, onTo
                     <div className="text-sm font-medium">{paidCount} از {totalCount} قسط پرداخت شده</div>
                     <div className="w-32 h-2 bg-gray-100 rounded-full mt-1 overflow-hidden">
                       <div 
-                        className="h-full bg-green-50 transition-all duration-500" 
+                        className="h-full bg-green-500 transition-all duration-500" 
                         style={{ width: `${(paidCount / totalCount) * 100}%` }}
                       ></div>
                     </div>
@@ -202,7 +276,7 @@ const LiabilitiesManager: React.FC<Props> = ({ members, liabilities, onAdd, onTo
                         className={`p-3 rounded-xl border flex flex-col gap-2 transition-all ${ins.isPaid ? 'bg-green-50 border-green-100 opacity-80' : 'bg-white border-gray-200 shadow-sm'}`}
                       >
                         <div className="flex justify-between items-center">
-                          <div className="text-xs text-gray-400">قسط {idx + 1}</div>
+                          <div className="text-xs text-gray-400 font-bold">قسط {idx + 1}</div>
                           <input 
                             type="checkbox" 
                             checked={ins.isPaid}
@@ -239,7 +313,7 @@ const LiabilitiesManager: React.FC<Props> = ({ members, liabilities, onAdd, onTo
                                 )}
                               </div>
                             )}
-                            <div className="text-[10px] text-gray-500">{new Date(ins.dueDate).toLocaleDateString('fa-IR')}</div>
+                            <div className="text-[10px] text-gray-500 font-sans">{new Date(ins.dueDate).toLocaleDateString('fa-IR')}</div>
                           </div>
                         </div>
                       </div>
