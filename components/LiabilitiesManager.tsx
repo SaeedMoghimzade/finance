@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { Member, Liability, RepaymentType, Installment } from '../types';
-import { formatCurrency, generateId, addCommas, removeCommas } from '../utils';
+import { formatCurrency, generateId, addCommas, removeCommas, formatPersianDate } from '../utils';
+import PersianDatePicker from './PersianDatePicker';
 
 interface Props {
   members: Member[];
@@ -57,7 +58,6 @@ const LiabilitiesManager: React.FC<Props> = ({ members, liabilities, onAdd, onTo
           date.setMonth(date.getMonth() + i);
           
           let currentAmount = finalPerInstallmentAmount;
-          // اگر بر اساس مبلغ کل بود، قسط آخر را برای رند شدن تنظیم می‌کنیم
           if (inputMethod === 'total' && i === formData.installmentsCount - 1) {
             currentAmount = finalTotalAmount - (finalPerInstallmentAmount * (formData.installmentsCount - 1));
           }
@@ -137,15 +137,11 @@ const LiabilitiesManager: React.FC<Props> = ({ members, liabilities, onAdd, onTo
               <option value={RepaymentType.LUMP_SUM}>یکجا</option>
             </select>
           </div>
-          <div>
-            <label className="block text-sm text-gray-600 mb-1 font-bold">تاریخ شروع / سررسید</label>
-            <input 
-              type="date" 
-              className="w-full p-2 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500 font-sans"
-              value={formData.startDate}
-              onChange={e => setFormData({ ...formData, startDate: e.target.value })}
-            />
-          </div>
+          <PersianDatePicker 
+            label="تاریخ شروع / سررسید"
+            value={formData.startDate}
+            onChange={(val) => setFormData({ ...formData, startDate: val })}
+          />
         </div>
 
         {formData.repaymentType === RepaymentType.INSTALLMENT && (
@@ -313,7 +309,7 @@ const LiabilitiesManager: React.FC<Props> = ({ members, liabilities, onAdd, onTo
                                 )}
                               </div>
                             )}
-                            <div className="text-[10px] text-gray-500 font-sans">{new Date(ins.dueDate).toLocaleDateString('fa-IR')}</div>
+                            <div className="text-[10px] text-gray-500 font-sans">{formatPersianDate(ins.dueDate)}</div>
                           </div>
                         </div>
                       </div>
